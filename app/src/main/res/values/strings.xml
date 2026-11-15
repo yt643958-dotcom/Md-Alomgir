@@ -5,4 +5,10 @@
     <string name="cd_open_navigation">Open navigation sidebar</string>
     <string name="cd_tts_toggle">Toggle Fenrir voice briefing</string>
     <string name="cd_voice_dictation">Voice dictation input</string>
+    <string name="auth_clearance_title">OPERATOR CLEARANCE REQUIRED</string>
+    <string name="auth_clearance_subtitle">Authenticate with your Gmail / Google account to unlock RIAD AI tactical modules.</string>
+    <string name="auth_google_button">Continue with Gmail / Google</string>
+    <string name="auth_signing_in">Verifying Google clearance…</string>
+    <string name="auth_sign_out">Sign Out</string>
+    <string name="auth_email_console_note">Google / Gmail Sign-In is armed. Standard Email+Password requires manual activation in Firebase Console.</string>
 </resources>

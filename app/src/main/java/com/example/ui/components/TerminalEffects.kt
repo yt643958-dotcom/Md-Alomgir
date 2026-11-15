@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.GraphicEq
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -380,6 +382,9 @@ fun RiadTopBar(
 fun RiadNavigationDrawerContent(
     currentRoute: ModuleRoute,
     onSelectRoute: (ModuleRoute) -> Unit,
+    operatorEmail: String? = null,
+    operatorName: String? = null,
+    onSignOut: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -500,6 +505,61 @@ fun RiadNavigationDrawerContent(
 
         Spacer(modifier = Modifier.weight(1f, fill = true))
         Spacer(modifier = Modifier.height(20.dp))
+
+        if (!operatorEmail.isNullOrBlank() || onSignOut != null) {
+            Surface(
+                color = VoidBackground,
+                border = BorderStroke(1.dp, MatrixGreen.copy(alpha = 0.35f)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VerifiedUser,
+                        contentDescription = null,
+                        tint = MatrixGreen,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = operatorName?.takeIf { it.isNotBlank() } ?: "OPERATOR",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (!operatorEmail.isNullOrBlank()) {
+                            Text(
+                                text = operatorEmail,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MatrixGreen,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    if (onSignOut != null) {
+                        IconButton(
+                            onClick = onSignOut,
+                            modifier = Modifier
+                                .minimumInteractiveComponentSize()
+                                .testTag("sign_out_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = stringResource(R.string.auth_sign_out),
+                                tint = MatrixGreen
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
         Surface(
             color = VoidBackground,

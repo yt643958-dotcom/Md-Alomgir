@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated RIAD AI operator profile synchronized after Google Sign-In.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID owning this operator profile."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified Gmail / Google account email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Operator display name from Google Sign-In."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Optional Google profile photo URL."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set on initial creation via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated on login via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "email", "displayName", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Private authenticated operator profile documents isolated strictly per user UID."
+    }
+  }
+}

@@ -19,17 +19,25 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.ModuleRoute
+import com.example.data.UserProfileRepository
 import com.example.security.configureAppCheck
+import com.example.ui.auth.AuthScreen
+import com.example.ui.auth.authStateFlow
+import com.example.ui.auth.signOutOperator
 import com.example.ui.chat.TerminalChatScreen
 import com.example.ui.chat.TerminalChatViewModel
 import com.example.ui.components.CrtScanlineOverlay
@@ -44,6 +52,9 @@ import com.example.ui.theme.RiadAiTheme
 import com.example.ui.theme.VoidBackground
 import com.example.ui.voice.LiveVoiceScreen
 import com.example.ui.voice.LiveVoiceViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -57,7 +68,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RiadAiTheme {
-                RiadAiAppShell()
+                RiadAuthGate()
             }
         }
     }
@@ -70,9 +81,39 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun RiadAiAppShell() {
+private fun RiadAuthGate() {
+    val auth = remember { Firebase.auth }
+    val currentUser by auth.authStateFlow().collectAsStateWithLifecycle(initialValue = auth.currentUser)
+    var refreshTick by remember { mutableStateOf(0) }
+    val user = currentUser
+
+    if (user == null) {
+        AuthScreen(
+            onAuthSuccess = { refreshTick++ }
+        )
+    } else {
+        val context = LocalContext.current
+        LaunchedEffect(user.uid, refreshTick) {
+            runCatching {
+                UserProfileRepository(context).upsertSignedInOperator(
+                    email = user.email.orEmpty(),
+                    displayName = user.displayName.orEmpty(),
+                    photoUrl = user.photoUrl?.toString()
+                )
+            }
+        }
+        key(user.uid) {
+            RiadAiAppShell(currentUser = user)
+        }
+    }
+}
+
+@Composable
+private fun RiadAiAppShell(currentUser: FirebaseUser) {
     var currentRoute by rememberSaveable { mutableStateOf(ModuleRoute.TERMINAL_CHAT) }
     var showSplash by rememberSaveable { mutableStateOf(true) }
+    val context = LocalContext.current
+    val credentialManager = remember(context) { CredentialManager.create(context) }
 
     val chatViewModel: TerminalChatViewModel = viewModel()
     val liveVoiceViewModel: LiveVoiceViewModel = viewModel()
@@ -172,7 +213,10 @@ private fun RiadAiAppShell() {
                 drawerContent = {
                     RiadNavigationDrawerContent(
                         currentRoute = currentRoute,
-                        onSelectRoute = { currentRoute = it }
+                        onSelectRoute = { currentRoute = it },
+                        operatorEmail = currentUser.email,
+                        operatorName = currentUser.displayName,
+                        onSignOut = { signOutOperator(credentialManager, scope) }
                     )
                 }
             ) {
@@ -191,6 +235,12 @@ private fun RiadAiAppShell() {
                             onSelectRoute = { route ->
                                 currentRoute = route
                                 scope.launch { drawerState.close() }
+                            },
+                            operatorEmail = currentUser.email,
+                            operatorName = currentUser.displayName,
+                            onSignOut = {
+                                scope.launch { drawerState.close() }
+                                signOutOperator(credentialManager, scope)
                             }
                         )
                     }
